@@ -1,0 +1,70 @@
+### basic health endpoint
+GET localhost:8080/api/health
+
+### find (read) job
+GET localhost:8080/api/jobs/edf14e08-cb7c-4b8e-b5c5-1e72dabc3794
+
+### Create a new job
+POST http://localhost:8080/api/jobs/create
+Content-Type: application/json
+
+{
+  "company": "Example Company",
+  "title": "Software Engineer",
+  "description": "Developing and maintaining web applications.",
+  "externalUrl": "http://example.com/job-details",
+  "salaryLo": 70000,
+  "salaryHi": 90000,
+  "currency": "USD",
+  "remote": true,
+  "location": "San Francisco",
+  "country": "USA",
+  "tags": ["engineering", "full-time"],
+  "image": "http://example.com/job-image.png",
+  "seniority": "mid-level",
+  "other": "Includes health benefits"
+}
+
+### Create a new job like Daniel (with error)
+POST http://localhost:8080/api/jobs/create
+Content-Type: application/json
+
+{
+  "company": "Example Company",
+  "title": "Software Engineer",
+  "description": "Developing and maintaining web applications.",
+  "externalUrl": "http://example.com/job-details",
+  "remote": "true",
+  "location": "San Francisco"
+}
+
+### Update a job by UUID
+PUT http://localhost:8080/api/jobs/1a158d92-d6be-45f4-bc70-86c472e502af
+Content-Type: application/json
+
+{
+  "company": "Example Company",
+  "title": "Senior Software Engineer",
+  "description": "Leading development teams and projects.",
+  "externalUrl": "http://example.com/job-details-senior",
+  "salaryLo": 90000,
+  "salaryHi": 120000,
+  "currency": "USD",
+  "remote": false,
+  "location": "New York",
+  "country": "USA",
+  "tags": ["engineering", "leadership"],
+  "image": "http://example.com/job-image-senior.png",
+  "seniority": "senior",
+  "other": "Includes equity options"
+}
+
+
+### List all jobs with optional query parameters
+POST http://localhost:8080/api/jobs
+
+### find job by uuid
+GET http://localhost:8080/api/jobs/1a158d92-d6be-45f4-bc70-86c472e502af
+
+### delete job by uuid
+DELETE http://localhost:8080/api/jobs/1a158d92-d6be-45f4-bc70-86c472e502af

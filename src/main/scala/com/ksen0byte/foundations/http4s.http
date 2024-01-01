@@ -1,0 +1,20 @@
+### no year param
+GET localhost:8080/courses?instructor=Martin%20Odersky
+
+### year param does not match
+GET localhost:8080/courses?instructor=Martin%20Odersky&year=2023
+
+### year param matches
+GET localhost:8080/courses?instructor=Martin%20Odersky&year=2022
+
+### year param is invalid
+GET localhost:8080/courses?instructor=Martin%20Odersky&year=202q
+
+### students by course id
+GET localhost:8080/courses/ab48f4ae-9a58-490f-bfab-c4308b0a2c97/students
+
+### students by invalid course id
+GET localhost:8080/courses/ab48f4ae-9a58-0f-bfab-c4308b0a2c97/students
+
+### private health
+GET localhost:8080/private/health
