@@ -39,7 +39,7 @@ Content-Type: application/json
 }
 
 ### Update a job by UUID
-PUT http://localhost:8080/api/jobs/1a158d92-d6be-45f4-bc70-86c472e502af
+PUT http://localhost:8080/api/jobs/9945db29-b6eb-494d-9e03-acd0d1cf7002
 Content-Type: application/json
 
 {
@@ -64,7 +64,7 @@ Content-Type: application/json
 POST http://localhost:8080/api/jobs
 
 ### find job by uuid
-GET http://localhost:8080/api/jobs/1a158d92-d6be-45f4-bc70-86c472e502af
+GET http://localhost:8080/api/jobs/9945db29-b6eb-494d-9e03-acd0d1cf7002
 
 ### delete job by uuid
-DELETE http://localhost:8080/api/jobs/1a158d92-d6be-45f4-bc70-86c472e502af
+DELETE http://localhost:8080/api/jobs/9945db29-b6eb-494d-9e03-acd0d1cf7002

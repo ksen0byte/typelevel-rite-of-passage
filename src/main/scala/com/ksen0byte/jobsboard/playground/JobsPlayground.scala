@@ -33,20 +33,18 @@ object JobsPlayground extends IOApp.Simple {
 
   override def run: IO[Unit] = postgresResource.use { xa =>
     for {
-      jobs  <- LiveJobs[IO](xa)
-      test1 <- jobs.find(java.util.UUID.fromString("af67b99c-06ea-4747-bdd3-0dac10d77a0d"))
-      _     <- IO.println(s"Found Job ${test1}. Next...") *> IO(StdIn.readLine)
-      //      _            <- IO.println("Ready. Next...")
-      //      id           <- jobs.create("vlad@rockthejvm.com", jobInfo)
-      //      _            <- IO.println("Created. Next...")
-//      jobList      <- jobs.all()
-//      _            <- IO.println(s"All jobs: $jobList. Next...") *> IO(StdIn.readLine)
-//      _            <- jobs.update(id, jobInfo.copy(title = "SWE"))
-//      job          <- jobs.find(id)
-//      _            <- IO.println(s"Updated job $job. Next...") *> IO(StdIn.readLine)
-//      _            <- jobs.delete(id)
-//      jobListAfter <- jobs.all()
-//      _            <- IO.println(s"Deleted job $id. Remaining jobs: $jobListAfter. Next...") *> IO(StdIn.readLine)
+      jobs         <- LiveJobs[IO](xa)
+      _            <- IO.println("Ready. Next...") *> IO(StdIn.readLine)
+      id           <- jobs.create("vlad@rockthejvm.com", jobInfo)
+      _            <- IO.println("Created. Next...") *> IO(StdIn.readLine)
+      jobList      <- jobs.all()
+      _            <- IO.println(s"All jobs: $jobList. Next...") *> IO(StdIn.readLine)
+      _            <- jobs.update(id, jobInfo.copy(title = "SWE"))
+      job          <- jobs.find(id)
+      _            <- IO.println(s"Updated job $job. Next...") *> IO(StdIn.readLine)
+      _            <- jobs.delete(id)
+      jobListAfter <- jobs.all()
+      _            <- IO.println(s"Deleted job $id. Remaining jobs: $jobListAfter. Next...") *> IO(StdIn.readLine)
     } yield ()
   }
 }

@@ -3,7 +3,7 @@ package com.ksen0byte.jobsboard
 import cats.effect.*
 import com.ksen0byte.jobsboard.config.EmberConfig
 import com.ksen0byte.jobsboard.config.syntax.*
-import com.ksen0byte.jobsboard.http.HttpApi
+import com.ksen0byte.jobsboard.modules.{Core, HttpApi}
 import org.http4s.*
 import org.http4s.ember.server.EmberServerBuilder
 import org.typelevel.log4cats.Logger
@@ -16,11 +16,16 @@ object Application extends IOApp.Simple:
 
   override def run: IO[Unit] =
     ConfigSource.default.loadF[IO, EmberConfig].flatMap { config =>
-      EmberServerBuilder
-        .default[IO]
-        .withHost(config.host)
-        .withPort(config.port)
-        .withHttpApp(HttpApi[IO].endpoints.orNotFound)
-        .build
-        .use(_ => IO.println("Rock the JVM!") *> IO.never)
+      val appResource = for {
+        core    <- Core[IO]
+        httpApi <- HttpApi[IO](core)
+        server <- EmberServerBuilder
+          .default[IO]
+          .withHost(config.host)
+          .withPort(config.port)
+          .withHttpApp(httpApi.endpoints.orNotFound)
+          .build
+      } yield server
+
+      appResource.use(_ => IO.println("Rock the JVM!") *> IO.never)
     }
