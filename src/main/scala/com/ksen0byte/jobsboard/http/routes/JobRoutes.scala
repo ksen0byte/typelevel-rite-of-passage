@@ -5,6 +5,7 @@ import cats.implicits.*
 import com.ksen0byte.jobsboard.core.Jobs
 import com.ksen0byte.jobsboard.domain.job.{Job, JobInfo}
 import com.ksen0byte.jobsboard.http.responses.FailureResponse
+import com.ksen0byte.jobsboard.http.validation.syntax.*
 import com.ksen0byte.jobsboard.logging.syntax.logError
 import io.circe.generic.auto.*
 import org.http4s.HttpRoutes
@@ -12,12 +13,8 @@ import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.Router
 import org.typelevel.log4cats.Logger
-import com.ksen0byte.jobsboard.logging.syntax.*
 
-import java.util.UUID
-import scala.collection.mutable
-
-class JobRoutes[F[_]: Concurrent: Logger] private (jobs: Jobs[F]) extends Http4sDsl[F]:
+class JobRoutes[F[_]: Concurrent: Logger] private (jobs: Jobs[F]) extends HttpValidationDsl[F]:
   // POST /jobs?offset=x&limit=y { filters } // TODO add query params
   private val allJobsRoutes: HttpRoutes[F] = HttpRoutes.of[F] { case POST -> Root =>
     for {
@@ -36,22 +33,27 @@ class JobRoutes[F[_]: Concurrent: Logger] private (jobs: Jobs[F]) extends Http4s
 
   // POST /jobs/create { jobInfo }
   private val createJobRoute: HttpRoutes[F] = HttpRoutes.of[F] { case req @ POST -> Root / "create" =>
-    for {
-      jobInfo <- req.as[JobInfo].logError(e => s"Parsing payload failed with $e")
-      jobId   <- jobs.create("TODO@rockthejvm.com", jobInfo)
-      resp    <- Created(jobId)
-    } yield resp
+    req
+      .validate[JobInfo] { jobInfo =>
+        for {
+          jobId <- jobs.create("TODO@rockthejvm.com", jobInfo)
+          resp  <- Created(jobId)
+        } yield resp
+      }
+      .logError(e => s"Parsing payload failed with $e")
   }
 
   // PUT /jobs/uuid { jobInfo }
   private val updateJobRoute: HttpRoutes[F] = HttpRoutes.of[F] { case req @ PUT -> Root / UUIDVar(jobId) =>
-    for {
-      jobInfo  <- req.as[JobInfo]
-      maybeJob <- jobs.update(jobId, jobInfo)
-      resp <- maybeJob match
-        case Some(job) => Ok()
-        case None      => NotFound(FailureResponse(s"Cannot update job with id $jobId"))
-    } yield resp
+    req
+      .validate[JobInfo] { jobInfo =>
+        for {
+          maybeJob <- jobs.update(jobId, jobInfo)
+          resp <- maybeJob match
+            case Some(job) => Ok()
+            case None      => NotFound(FailureResponse(s"Cannot update job with id $jobId"))
+        } yield resp
+      }
   }
 
   // DELETE /jobs/uuid
