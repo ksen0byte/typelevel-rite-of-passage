@@ -3,24 +3,29 @@ package com.ksen0byte.jobsboard.http.routes
 import cats.effect.Concurrent
 import cats.implicits.*
 import com.ksen0byte.jobsboard.core.Jobs
-import com.ksen0byte.jobsboard.domain.job.{Job, JobInfo}
+import com.ksen0byte.jobsboard.domain.job.{Job, JobFilter, JobInfo}
+import com.ksen0byte.jobsboard.domain.pagination.Pagination
 import com.ksen0byte.jobsboard.http.responses.FailureResponse
 import com.ksen0byte.jobsboard.http.validation.syntax.*
 import com.ksen0byte.jobsboard.logging.syntax.logError
 import io.circe.generic.auto.*
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec.*
-import org.http4s.dsl.Http4sDsl
 import org.http4s.server.Router
 import org.typelevel.log4cats.Logger
 
 class JobRoutes[F[_]: Concurrent: Logger] private (jobs: Jobs[F]) extends HttpValidationDsl[F]:
-  // POST /jobs?offset=x&limit=y { filters } // TODO add query params
-  private val allJobsRoutes: HttpRoutes[F] = HttpRoutes.of[F] { case POST -> Root =>
-    for {
-      jobList <- jobs.all()
-      resp    <- Ok(jobList)
-    } yield resp
+
+  private object OffsetQueryParam extends OptionalQueryParamDecoderMatcher[Int]("offset")
+  private object LimitQueryParam  extends OptionalQueryParamDecoderMatcher[Int]("limit")
+  // POST /jobs?offset=x&limit=y { filters }
+  private val allJobsRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
+    case req @ POST -> Root :? LimitQueryParam(limit) +& OffsetQueryParam(offset) =>
+      for {
+        filter  <- req.as[JobFilter]
+        jobList <- jobs.all(filter, Pagination(limit, offset))
+        resp    <- Ok(jobList)
+      } yield resp
   }
 
   // GET /jobs/UUID

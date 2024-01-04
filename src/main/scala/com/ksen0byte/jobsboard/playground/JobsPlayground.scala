@@ -7,6 +7,8 @@ import doobie.*
 import doobie.implicits.*
 import doobie.util.*
 import doobie.hikari.HikariTransactor
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import scala.io.StdIn
 
@@ -30,6 +32,8 @@ object JobsPlayground extends IOApp.Simple {
     remote = false,
     location = "Ukraine"
   )
+
+  given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
 
   override def run: IO[Unit] = postgresResource.use { xa =>
     for {

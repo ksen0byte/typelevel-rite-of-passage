@@ -4,7 +4,7 @@ GET localhost:8080/api/health
 ### find (read) job
 GET localhost:8080/api/jobs/edf14e08-cb7c-4b8e-b5c5-1e72dabc3794
 
-### Create a new job
+### Create a new job #1
 POST http://localhost:8080/api/jobs/create
 Content-Type: application/json
 
@@ -19,9 +19,37 @@ Content-Type: application/json
   "remote": true,
   "location": "San Francisco",
   "country": "USA",
-  "tags": ["engineering", "full-time"],
+  "tags": [
+    "engineering",
+    "full-time"
+  ],
   "image": "http://example.com/job-image.png",
-  "seniority": "mid-level",
+  "seniority": "middle",
+  "other": "Includes health benefits"
+}
+
+### Create a new job #2
+POST http://localhost:8080/api/jobs/create
+Content-Type: application/json
+
+{
+  "company": "Another Company",
+  "title": "Devops",
+  "description": "Devopsin'",
+  "externalUrl": "http://another-example.com/job-details",
+  "salaryLo": 170000,
+  "salaryHi": 190000,
+  "currency": "USD",
+  "remote": true,
+  "location": "Berlin",
+  "country": "Germany",
+  "tags": [
+    "engineering",
+    "full-time",
+    "devops"
+  ],
+  "image": "http://another-example.com/job-image.png",
+  "seniority": "senior",
   "other": "Includes health benefits"
 }
 
@@ -53,18 +81,82 @@ Content-Type: application/json
   "remote": false,
   "location": "New York",
   "country": "USA",
-  "tags": ["engineering", "leadership"],
+  "tags": [
+    "engineering",
+    "leadership"
+  ],
   "image": "http://example.com/job-image-senior.png",
   "seniority": "senior",
   "other": "Includes equity options"
 }
 
 
-### List all jobs with optional query parameters
+### List all jobs with no query parameters
 POST http://localhost:8080/api/jobs
+Content-Type: application/json
+
+{}
 
 ### find job by uuid
-GET http://localhost:8080/api/jobs/7a052a84-8120-4b74-ba6d-b80b062eeee2
+GET http://localhost:8080/api/jobs/f3b6acf4-d08c-42c1-9283-ab59d2413639
 
 ### delete job by uuid
 DELETE http://localhost:8080/api/jobs/7a052a84-8120-4b74-ba6d-b80b062eeee2
+
+### List all jobs with limit and offset query parameters to show second job
+POST http://localhost:8080/api/jobs?limit=1&offset=1
+Content-Type: application/json
+
+{}
+
+### List all jobs with filter
+POST http://localhost:8080/api/jobs
+Content-Type: application/json
+
+{
+  "companies": [
+    "Example Company"
+  ],
+  "locations": [
+    "San Francisco",
+    "Berlin"
+  ],
+  "countries": [
+    "USA"
+  ],
+  "seniorities": [
+    "senior",
+    "middle"
+  ],
+  "tags": [
+    "engineering"
+  ],
+  "maxSalary": 50000,
+  "remote": true
+}
+
+### List all jobs with limit and offset query parameters and filter to show second job
+POST http://localhost:8080/api/jobs?limit=1&offset=1
+Content-Type: application/json
+
+{
+  "companies": [],
+  "locations": [
+    "San Francisco",
+    "Berlin"
+  ],
+  "countries": [
+    "USA",
+    "Germany"
+  ],
+  "seniorities": [
+    "senior",
+    "middle"
+  ],
+  "tags": [
+    "engineering"
+  ],
+  "maxSalary": 50000,
+  "remote": true
+}
+

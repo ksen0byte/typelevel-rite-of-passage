@@ -2,12 +2,15 @@ package com.ksen0byte.jobsboard.core
 
 import cats.effect.MonadCancelThrow
 import cats.implicits.*
-import com.ksen0byte.jobsboard.domain.job.{Job, JobInfo}
+import com.ksen0byte.jobsboard.logging.syntax.*
+import com.ksen0byte.jobsboard.domain.job.{Job, JobFilter, JobInfo}
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import doobie.util.*
 import LiveJobs.given
+import com.ksen0byte.jobsboard.domain.pagination.Pagination
+import org.typelevel.log4cats.Logger
 
 import java.util.UUID
 
@@ -17,12 +20,13 @@ trait Jobs[F[_]] {
 
   def create(ownerEmail: String, jobInfo: JobInfo): F[UUID]
   def all(): F[List[Job]]
+  def all(filter: JobFilter, pagination: Pagination): F[List[Job]]
   def find(id: UUID): F[Option[Job]]
   def update(id: UUID, jobInfo: JobInfo): F[Option[Job]]
   def delete(id: UUID): F[Int]
 }
 
-class LiveJobs[F[_]: MonadCancelThrow] private (xa: Transactor[F]) extends Jobs[F] {
+class LiveJobs[F[_]: MonadCancelThrow: Logger] private (xa: Transactor[F]) extends Jobs[F] {
   override def create(ownerEmail: String, jobInfo: JobInfo): F[UUID] =
     sql"""
          INSERT INTO jobs (
@@ -87,6 +91,50 @@ class LiveJobs[F[_]: MonadCancelThrow] private (xa: Transactor[F]) extends Jobs[
         active
       FROM jobs
          """.query[Job].to[List].transact(xa)
+
+  override def all(filter: JobFilter, pagination: Pagination): F[List[Job]] =
+    val selectFragment =
+      fr"""
+        SELECT
+          id,
+          date,
+          ownerEmail,
+          company,
+          title,
+          description,
+          externalUrl,
+          remote,
+          location,
+          salaryLo,
+          salaryHi,
+          currency,
+          country,
+          tags,
+          image,
+          seniority,
+          other,
+          active
+        """
+    val fromFragment =
+      fr"FROM jobs"
+
+    val whereFragment = Fragments.whereAndOpt(
+      filter.companies.toNel.map(companies => Fragments.in(fr"company", companies)),
+      filter.countries.toNel.map(countries => Fragments.in(fr"country", countries)),
+      filter.locations.toNel.map(locations => Fragments.in(fr"location", locations)),
+      filter.seniorities.toNel.map(seniorities => Fragments.in(fr"seniority", seniorities)),
+      filter.tags.toNel.map(tags => Fragments.or(tags.toList.map(tag => fr"$tag=any(tags)"): _*)),
+      filter.maxSalary.map(salary => fr"salaryHi > $salary"),
+      filter.remote.some.map(remote => fr"remote = $remote")
+    )
+
+    val paginationFragment =
+      fr"ORDER BY id LIMIT ${pagination.limit} OFFSET ${pagination.offset}"
+
+    val statement = selectFragment |+| fromFragment |+| whereFragment |+| paginationFragment
+
+    Logger[F].info(statement.toString) *>
+      statement.query[Job].to[List].transact(xa).logError(e => s"Failed query ${e.getMessage}")
 
   override def find(id: UUID): F[Option[Job]] =
     sql"""
@@ -207,6 +255,6 @@ object LiveJobs {
       )
   }
 
-  def apply[F[_]: MonadCancelThrow](xa: Transactor[F]): F[LiveJobs[F]] = new LiveJobs[F](xa).pure[F]
+  def apply[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]): F[LiveJobs[F]] = new LiveJobs[F](xa).pure[F]
 
 }

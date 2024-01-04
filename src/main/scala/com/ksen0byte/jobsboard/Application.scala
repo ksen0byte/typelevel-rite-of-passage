@@ -1,7 +1,7 @@
 package com.ksen0byte.jobsboard
 
 import cats.effect.*
-import com.ksen0byte.jobsboard.config.{AppConfig, EmberConfig}
+import com.ksen0byte.jobsboard.config.AppConfig
 import com.ksen0byte.jobsboard.config.syntax.*
 import com.ksen0byte.jobsboard.modules.{Core, Database, HttpApi}
 import org.http4s.*

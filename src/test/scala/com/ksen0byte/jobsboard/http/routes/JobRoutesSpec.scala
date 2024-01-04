@@ -2,12 +2,13 @@ package com.ksen0byte.jobsboard.http.routes
 
 import io.circe.generic.auto.*
 import org.http4s.circe.CirceEntityCodec.*
-
 import cats.implicits.*
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.ksen0byte.jobsboard.core.Jobs
-import com.ksen0byte.jobsboard.domain.job.{Job, JobInfo}
+import com.ksen0byte.jobsboard.domain.{job, pagination}
+import com.ksen0byte.jobsboard.domain.job.{Job, JobFilter, JobInfo}
+import com.ksen0byte.jobsboard.domain.pagination.Pagination
 import com.ksen0byte.jobsboard.fixtures.JobFixture
 import org.http4s.*
 import org.http4s.implicits.*
@@ -22,11 +23,19 @@ import java.util.UUID
 class JobRoutesSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers with Http4sDsl[IO] with JobFixture {
   val jobs: Jobs[IO] = new Jobs[IO]:
     override def create(ownerEmail: String, jobInfo: JobInfo): IO[UUID] = IO.pure(NewJobUuid)
-    override def all(): IO[List[Job]]                                   = IO.pure(List(AwesomeJob))
+
+    override def all(): IO[List[Job]] = IO.pure(List(AwesomeJob))
+
+    override def all(filter: JobFilter, pagination: Pagination): IO[List[Job]] =
+      if filter.remote then IO.pure(List.empty)
+      else IO.pure(List(AwesomeJob))
+
     override def find(id: UUID): IO[Option[Job]] =
       if id == AwesomeJobUuid then IO.pure(Some(AwesomeJob)) else IO.pure(None)
+
     override def update(id: UUID, jobInfo: JobInfo): IO[Option[Job]] =
       if id == AwesomeJobUuid then IO.pure(Some(UpdatedAwesomeJob)) else IO.pure(None)
+
     override def delete(id: UUID): IO[Int] =
       if id == AwesomeJobUuid then IO.pure(1) else IO.pure(0)
 
@@ -49,12 +58,24 @@ class JobRoutesSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers with Ht
     "should return all jobs" in {
       for {
         response <- jobRoutes.orNotFound.run(
-          Request(method = Method.POST, uri = uri"/jobs")
+          Request(method = Method.POST, uri = uri"/jobs").withEntity(JobFilter())
         )
         jobs <- response.as[List[Job]]
       } yield {
         response.status shouldBe Status.Ok
         jobs shouldBe List(AwesomeJob)
+      }
+    }
+
+    "should return all jobs that satisfy a filter" in {
+      for {
+        response <- jobRoutes.orNotFound.run(
+          Request(method = Method.POST, uri = uri"/jobs").withEntity(JobFilter(remote = true))
+        )
+        jobs <- response.as[List[Job]]
+      } yield {
+        response.status shouldBe Status.Ok
+        jobs shouldBe List()
       }
     }
 
